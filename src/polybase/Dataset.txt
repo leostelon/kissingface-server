@@ -1,0 +1,40 @@
+@public
+collection Dataset {
+  id: string;
+  name: string;
+  version: string;
+  creator: string;
+  file: string;
+  timestamp: number;
+  private: boolean;
+  latest:boolean;
+
+  @index(timestamp);
+  @index(private, creator);
+  @index(name, timestamp);
+  @index(name, latest);
+  @index(private, timestamp);
+  
+  constructor(name:string, version:string, file: string, creator:string) {
+    this.id = name + ":" + version;
+    this.name = name;
+    this.version = version;
+    this.file = file;
+    this.creator = creator;
+    this.timestamp = Date.now();
+    this.private = false;
+    this.latest = true;
+  }
+
+  disableLatest() {
+    this.latest = false;
+  }
+  
+  makePrivate() {
+    this.private = true;
+  }
+
+  makePublic() {
+    this.private = false;
+  }
+}

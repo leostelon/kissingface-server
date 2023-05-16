@@ -1,22 +1,28 @@
+const fs = require("fs");
 const path = require("path");
 const router = require("express").Router();
 const { SpheronClient, ProtocolEnum } = require("@spheron/storage");
 const { upload } = require("../middlewares/multer");
 const { db } = require("../polybase");
+const { auth } = require("../middlewares/auth");
 
 const token = process.env.SPHERON_TOKEN;
 const client = new SpheronClient({ token });
-const repositoryReference = db.collection("Repository");
+const dataReference = db.collection("Dataset");
 
 router.post(
-	"/upload",
+	"/upload/dataset",
+	auth,
 	upload.single("file"),
 	async (req, res) => {
 		try {
 			if (!req.file) {
-				return res.send({ message: "Send file" });
+				return res.send({ message: "Please upload a file." });
 			}
 			const file = req.file;
+			const dataset = req.body.dataset;
+			const tag = dataset.split(":").pop();
+			const name = dataset.split(":").slice(0, -1).join(":");
 
 			// Upload to Spheron
 			const filePath = path.join(__dirname, "../../uploads/" + file.filename);
@@ -33,9 +39,18 @@ router.post(
 				},
 			});
 
+			// Check for latest
+			const dataSetList = await dataReference
+				.where("name", "==", `${req.user.id}/${name}`)
+				.where("latest", "==", true)
+				.get();
+			if (dataSetList.data.length > 0) {
+				ds = dataSetList.data[0].data;
+				await dataReference.record(ds.id).call("disableLatest", []);
+			}
 			// Upload to polybase
-			repoImage = await repositoryReference.create([
-				`${req.user.username}/${name}`,
+			repoImage = await dataReference.create([
+				`${req.user.id}/${name}`,
 				tag,
 				response.protocolLink,
 				req.user.id,
