@@ -1,0 +1,15 @@
+@public
+collection Access {
+  id: string;
+  user: string;
+  tokenAddress: string;
+  supply: number;
+
+  constructor(user: string, tokenAddress: string, supply: number) {
+    this.id = user + ":" + tokenAddress;
+    this.user = user;
+    this.tokenAddress = tokenAddress;
+    this.supply = supply;
+    this.timestamp = Date.now();
+  }
+}

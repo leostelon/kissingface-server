@@ -7,7 +7,8 @@ collection Dataset {
   file: string;
   timestamp: number;
   private: boolean;
-  latest:boolean;
+  latest: boolean;
+  tokenAccessEnabled: boolean;
 
   @index(timestamp);
   @index(private, creator);
@@ -24,10 +25,15 @@ collection Dataset {
     this.timestamp = Date.now();
     this.private = false;
     this.latest = true;
+    this.tokenAccessEnabled = false;
   }
 
   disableLatest() {
     this.latest = false;
+  }
+
+  enableTokenAccess() {
+    this.tokenAccessEnabled = true;
   }
   
   makePrivate() {
