@@ -4,48 +4,44 @@ const { auth } = require("../middlewares/auth");
 const getUser = require("../middlewares/getUser");
 
 const datasetReference = db.collection("Dataset");
+const accessReference = db.collection("Access");
+const accessTokenReference = db.collection("AccessToken");
 
 router.get("/datasets", async (req, res) => {
 	try {
-		const ds = await datasetReference
-			.sort("timestamp", "desc")
-			.limit(20)
-			.get();
+		const ds = await datasetReference.sort("timestamp", "desc").limit(20).get();
 		res.send({ repositories: ds.data });
 	} catch (error) {
 		res.status(500).send({ message: error.message });
 	}
 });
 
-router.post("/datasets/private", auth, async (req, res) => {
+router.get("/datasets/download", auth, async (req, res) => {
 	try {
-		const repo = await datasetReference.record(req.body.id).get();
-		if (repo.data.creator !== req.user.id)
-			return res.status(401).send({ message: "Unauthorized!" });
+		const accessToken = await accessTokenReference
+			.where("datasetId", "==", req.query.id)
+			.get();
+		if (accessToken.data.length === 0)
+			return res.status(404).send({ message: "Invalid dataset id." });
 
-		const response = await datasetReference
-			.record(req.body.id)
-			.call("makePrivate", []);
-		res.send(response.data);
+		const access = await accessReference
+			.where("user", "==", req.user.id)
+			.where("accessTokenId", "==", accessToken.data[0].data.id)
+			.get();
+
+		if (access.data.length === 0)
+			return res
+				.status(401)
+				.send({ message: "You don't have enough access token's." });
+
+		const dataset = await datasetReference.record(req.query.id).get();
+		res.send(dataset);
 	} catch (error) {
 		res.status(500).send({ message: error.message });
 	}
 });
 
-router.post("/datasets/public", auth, async (req, res) => {
-	try {
-		const repo = await datasetReference.record(req.body.id).get();
-		if (repo.data.creator !== req.user.id)
-			return res.status(401).send({ message: "Unauthorized!" });
 
-		const response = await datasetReference
-			.record(req.body.id)
-			.call("makePublic", []);
-		res.send(response.data);
-	} catch (error) {
-		res.status(500).send({ message: error.message });
-	}
-});
 
 // TODO: Add proper search method
 router.get("/datasets/search", getUser, async (req, res) => {
@@ -90,6 +86,7 @@ router.get("/datasets/user/:creator", getUser, async (req, res) => {
 	try {
 		let datasets = await datasetReference
 			.where("creator", "==", req.params.creator)
+			.sort("timestamp", "desc")
 			.get();
 		datasets.data = datasets.data.map((d) => {
 			delete d.data.file;

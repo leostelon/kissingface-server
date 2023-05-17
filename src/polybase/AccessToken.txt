@@ -2,6 +2,7 @@
 collection AccessToken {
   id: string;
   datasetId: string;
+  datasetName: string;
   user: string;
   name: string;
   tokenAddress: string;
@@ -9,9 +10,10 @@ collection AccessToken {
   maxSupply: number;
   pricePerToken: number;
 
-  constructor(datasetId: string, user: string, name: string, tokenAddress: string, miniumPurchase: number, pricePerToken: number, maxSupply: number) {
-    this.id = user + ":" + datasetId;
+  constructor(datasetId: string, datasetName: string, user: string, name: string, tokenAddress: string, miniumPurchase: number, pricePerToken: number, maxSupply: number) {
+    this.id = user + ":" + datasetName;
     this.datasetId = datasetId;
+    this.datasetName = datasetName;
     this.user = user;
     this.name = name;
     this.maxSupply = maxSupply;
