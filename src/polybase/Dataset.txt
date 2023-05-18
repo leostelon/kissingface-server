@@ -15,6 +15,7 @@ collection Dataset {
   @index(name, timestamp);
   @index(name, latest);
   @index(creator, timestamp);
+  @index(latest, timestamp);
   
   constructor(name:string, version:string, file: string, creator:string) {
     this.id = name + ":" + version;

@@ -9,7 +9,7 @@ const accessTokenReference = db.collection("AccessToken");
 
 router.get("/datasets", async (req, res) => {
 	try {
-		const ds = await datasetReference.sort("timestamp", "desc").limit(20).get();
+		const ds = await datasetReference.where("latest", "==", true).sort("timestamp", "desc").limit(20).get();
 		res.send({ repositories: ds.data });
 	} catch (error) {
 		res.status(500).send({ message: error.message });
@@ -41,8 +41,6 @@ router.get("/datasets/download", auth, async (req, res) => {
 	}
 });
 
-
-
 // TODO: Add proper search method
 router.get("/datasets/search", getUser, async (req, res) => {
 	try {
@@ -56,26 +54,9 @@ router.get("/datasets/search", getUser, async (req, res) => {
 	}
 });
 
-router.get("/datasets/tags", getUser, async (req, res) => {
+router.get("/datasets/versions", getUser, async (req, res) => {
 	try {
-		let rep;
-		if (req.user) {
-			rep = await datasetReference.where("name", "==", req.query.name).get();
-			if (rep.data.length >= 1) {
-				const repoImage = rep.data[0];
-				if (repoImage.data.creator !== req.user.id) {
-					rep = await datasetReference
-						.where("name", "==", req.query.name)
-						.where("private", "==", false)
-						.get();
-				}
-			}
-		} else {
-			rep = await datasetReference
-				.where("name", "==", req.query.name)
-				.where("private", "==", false)
-				.get();
-		}
+		let rep = await datasetReference.where("name", "==", req.query.name).get();
 		res.send({ repositories: rep.data });
 	} catch (error) {
 		res.status(500).send({ message: error.message });
