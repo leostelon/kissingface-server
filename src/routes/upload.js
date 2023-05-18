@@ -21,6 +21,7 @@ router.post(
 			}
 			const file = req.file;
 			const dataset = req.body.dataset;
+			const description = req.body.description;
 			const tag = dataset.split(":").pop();
 			const name = dataset.split(":").slice(0, -1).join(":");
 
@@ -54,6 +55,7 @@ router.post(
 				tag,
 				response.protocolLink,
 				req.user.id,
+				description
 			]);
 
 			// Delete File

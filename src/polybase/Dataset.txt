@@ -4,6 +4,7 @@ collection Dataset {
   name: string;
   version: string;
   creator: string;
+  description: string;
   file: string;
   timestamp: number;
   private: boolean;
@@ -17,12 +18,13 @@ collection Dataset {
   @index(creator, timestamp);
   @index(latest, timestamp);
   
-  constructor(name:string, version:string, file: string, creator:string) {
+  constructor(name:string, version:string, file: string, creator:string, description:string) {
     this.id = name + ":" + version;
     this.name = name;
     this.version = version;
     this.file = file;
     this.creator = creator;
+    this.description = description;
     this.timestamp = Date.now();
     this.private = false;
     this.latest = true;
