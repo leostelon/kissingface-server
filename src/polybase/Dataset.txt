@@ -10,6 +10,7 @@ collection Dataset {
   private: boolean;
   latest: boolean;
   tokenAccessEnabled: boolean;
+  stableDiffusionEnabled: boolean;
 
   @index(timestamp);
   @index(private, creator);
@@ -18,7 +19,7 @@ collection Dataset {
   @index(creator, timestamp);
   @index(latest, timestamp);
   
-  constructor(name:string, version:string, file: string, creator:string, description:string) {
+  constructor(name:string, version:string, file: string, creator:string, description:string, stableDiffusionEnabled: boolean) {
     this.id = name + ":" + version;
     this.name = name;
     this.version = version;
@@ -29,6 +30,7 @@ collection Dataset {
     this.private = false;
     this.latest = true;
     this.tokenAccessEnabled = false;
+    this.stableDiffusionEnabled = stableDiffusionEnabled;
   }
 
   disableLatest() {

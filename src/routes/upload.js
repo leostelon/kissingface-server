@@ -13,20 +13,27 @@ const dataReference = db.collection("Dataset");
 router.post(
 	"/upload/dataset",
 	auth,
-	upload.single("file"),
+	upload.array("file"),
 	async (req, res) => {
 		try {
-			if (!req.file) {
+			if (req.files && req.files.length === 0) {
 				return res.send({ message: "Please upload a file." });
 			}
-			const file = req.file;
+			const files = req.files;
 			const dataset = req.body.dataset;
 			const description = req.body.description;
+			const stableDiffusionEnabled =
+				req.body.stableDiffusionEnabled === "false" ? false : true;
 			const tag = dataset.split(":").pop();
 			const name = dataset.split(":").slice(0, -1).join(":");
 
 			// Upload to Spheron
-			const filePath = path.join(__dirname, "../../uploads/" + file.filename);
+			let filePath;
+			if (stableDiffusionEnabled) {
+				filePath = path.join(__dirname, "../../uploads/");
+			} else {
+				filePath = path.join(__dirname, "../../uploads/" + files[0].filename);
+			}
 			const response = await client.upload(filePath, {
 				protocol: ProtocolEnum.IPFS,
 				name: "testdaggle",
@@ -55,11 +62,14 @@ router.post(
 				tag,
 				response.protocolLink,
 				req.user.id,
-				description
+				description,
+				stableDiffusionEnabled,
 			]);
 
-			// Delete File
-			fs.rmSync(`${file.destination}/${file.filename}`);
+			// Delete Files
+			for (const file of files) {
+				fs.rmSync(`${file.destination}/${file.filename}`);
+			}
 
 			res.send(response);
 		} catch (error) {
