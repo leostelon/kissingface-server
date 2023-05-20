@@ -17,6 +17,9 @@ RUN apk add --no-cache bash
 RUN apk add --no-cache openssl
 
 WORKDIR /app
+
+EXPOSE 3000
+
 COPY --from=node /app/ /app/
 RUN npm install
 

@@ -5,26 +5,48 @@ const { auth } = require("../middlewares/auth");
 const { db } = require("../polybase");
 
 const jobReference = db.collection("Job");
+const datasetReference = db.collection("Dataset");
+const accessTokenReference = db.collection("AccessToken");
+const accessReference = db.collection("Access");
 
 router.post("/bacalhau", auth, async (req, res) => {
 	try {
-		const { prompt, ipfsPath } = req.body;
-		if (!prompt || !ipfsPath)
+		const { prompt, datasetId } = req.body;
+		if (!datasetId || !prompt)
 			return res
 				.status(500)
-				.send({ message: "Please send both prompt and ipfs path." });
+				.send({ message: "Please send datasetId and prompt!" });
+
+		const accessToken = await accessTokenReference
+			.where("datasetId", "==", datasetId)
+			.get();
+		if (accessToken.data.length === 0)
+			return res.status(404).send({ message: "Invalid dataset id." });
+
+		// Authentication
+		const access = await accessReference
+			.where("user", "==", req.user.id)
+			.where("accessTokenId", "==", accessToken.data[0].data.id)
+			.get();
+
+		if (access.data.length === 0)
+			return res
+				.status(401)
+				.send({ message: "You don't have enough access token's." });
+
+		// Get dataset
+		const dataset = await datasetReference.record(datasetId).get();
+		let link = dataset.data.file;
+		link = link.replace(".ipfs.sphn.link", "").replace("https", "ipfs");
 
 		// Create a job
-		const command = `bacalhau docker run -i ${ipfsPath} jsacex/dreambooth:full --id-only -- bash finetune.sh /inputs /outputs ${prompt} 100`;
+		const command = `bacalhau docker run -i ${link} jsacex/dreambooth:full --id-only -- bash finetune.sh /inputs /outputs "${prompt}" 100`;
 		const { stdout, stderr } = await exec(command);
 		if (stderr) return console.log("Error", stderr);
 		console.log(stdout);
 
 		// Upload job id to polybase
-		const response = await jobReference.create([
-			stdout,
-			req.user.id,
-		]);
+		const response = await jobReference.create([stdout, req.user.id]);
 
 		res.send(response.data);
 	} catch (error) {
