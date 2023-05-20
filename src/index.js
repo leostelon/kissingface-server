@@ -32,7 +32,7 @@ app.use(express.json());
 app.use(routes);
 
 app.get("/", (req, res) => {
-	res.send({ message: "Dedock server⚡" });
+	res.send({ message: "Daggle server⚡" });
 });
 
 app.listen(3000, () => {
