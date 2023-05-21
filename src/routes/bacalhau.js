@@ -43,10 +43,11 @@ router.post("/bacalhau", auth, async (req, res) => {
 		const command = `bacalhau docker run -i ${link} jsacex/dreambooth:full --id-only -- bash finetune.sh /inputs /outputs "${prompt}" 100`;
 		const { stdout, stderr } = await exec(command);
 		if (stderr) return console.log("Error", stderr);
-		console.log(stdout);
+		const jobId = stdout.replace(/(\r\n|\n|\r)/gm, "");
+		console.log(jobId);
 
 		// Upload job id to polybase
-		const response = await jobReference.create([stdout, req.user.id]);
+		const response = await jobReference.create([jobId, req.user.id]);
 
 		res.send(response.data);
 	} catch (error) {
@@ -62,6 +63,25 @@ router.get("/bacalhau", auth, async (req, res) => {
 			.get();
 
 		res.send(response.data);
+	} catch (error) {
+		console.log(error.message);
+	}
+});
+
+router.get("/bacalhau/job", async (req, res) => {
+	try {
+		// Get job
+		const command = `bacalhau describe ${req.query.id} --json`;
+		const { stdout, stderr } = await exec(command);
+		if (stderr) return console.log("Error", stderr);
+		const parsedOutput = JSON.parse(stdout)
+		const cid = parsedOutput.State.Executions[2].PublishedResults.CID;
+		const state = parsedOutput.State.Executions[2].State;
+
+		await jobReference
+			.record(req.query.id)
+			.call("updateStatus", [state]);
+		res.send({ cid, state });
 	} catch (error) {
 		console.log(error.message);
 	}
